@@ -66,10 +66,31 @@ MORSE = {
     "+": ".-.-.",  "-": "-....-", "_": "..--.-", "\"": ".-..-.",
     "$": "...-..-","@": ".--.-."
 }
+# om van morse code naar letter te gaan voor zelf typen
+MORSE_REVERSED = {
+    ".-": "A",    "-...": "B",  "-.-.": "C",  "-..": "D",
+    ".": "E",     "..-.": "F",  "--.": "G",   "....": "H",
+    "..": "I",    ".---": "J",  "-.-": "K",   ".-..": "L",
+    "--": "M",    "-.": "N",    "---": "O",   ".--.": "P",
+    "--.-": "Q",  ".-.": "R",   "...": "S",   "-": "T",
+    "..-": "U",   "...-": "V",  ".--": "W",   "-..-": "X",
+    "-.--": "Y",  "--..": "Z",
+
+    ".----": "1", "..---": "2", "...--": "3", "....-": "4",
+    ".....": "5", "-....": "6", "--...": "7", "---..": "8",
+    "----.": "9", "-----": "0",
+
+    ".-.-.-": ".", "--..--": ",", "..--..": "?", ".----.": "'",
+    "-.-.--": "!", "-..-.": "/",  "-.--.": "(",  "-.--.-": ")",
+    ".-...": "&",  "---...": ":", "-.-.-.": ";", "-...-": "=",
+    ".-.-.": "+",  "-....-": "-", "..--.-": "_", ".-..-.": "\"",
+    "...-..-": "$",".--.-.": "@"
+}
+
 # Het morse code alfabet is gemaakt met chatgpt omdat het anders heel veel hetzelfde zou zijn
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# Begin van de echte code                           #
+# Begin van de code voor letters oefenen            #
 # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 # Function voor random letter
@@ -83,7 +104,7 @@ def random_letter():
 # functions voor het voorbeeld, dit bliept de letter en zet het op de lcd
 def LCD_print(letter):
     lcd.clear()
-    lcd.message = f"{letter}\n{MORSE[letter]}"
+    lcd.message = f"{letter} =  {MORSE[letter]}"
     play_morse(letter)
 
 def ON(duration):
@@ -139,6 +160,8 @@ def knop_checken(letter):
             while not big_button.value:
                 time.sleep(0.01)
 
+            time.sleep(0.05)  # debounce na loslaten (kijk of dit wel helpt) 
+
             # los = LED uit
             led_buzzer.value = False
 
@@ -146,13 +169,13 @@ def knop_checken(letter):
             duration = time.time() - press_time
 
             # bepaal kort of lang signaal
-            if duration < (KORT + LANG) / 2:   # korter dan grens "."
+            if duration < (KORT + LANG) /2:   # korter dan grens "."
                 knop_morse.append(".")
             else:                             # langer dan grens "-"
                 knop_morse.append("-")
 
             # bovenste rij tonen wat er tot nu toe is ingedrukt
-            lcd.cursor_position(0, 0)
+            lcd.cursor_position(0, 1)
             lcd.message = "".join(knop_morse)
 
             time.sleep(0.2)  # kleine pauze tussen drukken
@@ -161,23 +184,49 @@ def knop_checken(letter):
     if "".join(knop_morse) == code:
         lcd.clear()
         lcd.message = "goed gedaan!\nvolgende letter"
+        
     else:
         lcd.clear()
-        lcd.message = "helaas, dat \n klopt niet"
-        knop_checken()
+        lcd.message = "helaas, volgende\nkeer beter"
 
     # korte pauze zodat gebruiker het resultaat kan zien
     time.sleep(1)
 
-# de main loop voor alles
-while True:
-    if not button.value:
+# # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# Begin van de code voor zelf typen                 #
+# # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+
+# de main loop voor oefenen met voorbeeld  *werkend*
+def letters_oefenen():
+    looping = True
+    while looping == True:
+        time.sleep(0.5)
         letter = random_letter()
         LCD_print(letter)
         time.sleep(0.1)
         knop_checken(letter)
-
-        # klik op de knop ob het breadbord om script te starten
+        
         while not button.value:
-            time.sleep(0.1)
+            time.sleep(0.3)
+            looping = False
 
+# de main loop voor oefenen zonder voorbeeld  *werkend* 
+def morsecode_oefenen():
+    looping1 = True
+    while looping1 == True:
+        time.sleep(0.5)
+        letter = random_letter()
+        lcd.message = letter
+        time.sleep(0.1)
+        knop_checken(letter)
+        lcd.clear()
+
+        while not button.value:
+            time.sleep(0.3)
+            looping1 = False
+
+# de main loop voor letters zelf typen
+
+
+# er is nog geen menu dus zet bij testen je functie aan
