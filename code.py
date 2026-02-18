@@ -5,7 +5,7 @@ import board
 import adafruit_character_lcd.character_lcd as characterlcd
 
 # # # # # # # # # # # # # # # #
-# Preperation/voorbereiding   #
+# voorbereiding               #
 # # # # # # # # # # # # # # # #
 
 # LCD pins
@@ -159,8 +159,7 @@ def knop_checken(letter):
             # wacht tot de knop losgelaten wordt
             while not big_button.value:
                 time.sleep(0.01)
-
-            time.sleep(0.05)  # debounce na loslaten (kijk of dit wel helpt) 
+            time.sleep(0.05)  
 
             # los = LED uit
             led_buzzer.value = False
@@ -187,7 +186,8 @@ def knop_checken(letter):
         
     else:
         lcd.clear()
-        lcd.message = "helaas, volgende\nkeer beter"
+        lcd.message = f"fout, goed was:\n {MORSE[letter]}"
+        time.sleep (0.5)
 
     # korte pauze zodat gebruiker het resultaat kan zien
     time.sleep(1)
@@ -195,6 +195,8 @@ def knop_checken(letter):
 # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # Begin van de code voor zelf typen                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # #
+def typen():
+    
 
 
 # de main loop voor oefenen met voorbeeld  *werkend*
@@ -230,3 +232,4 @@ def morsecode_oefenen():
 
 
 # er is nog geen menu dus zet bij testen je functie aan
+letters_oefenen()
