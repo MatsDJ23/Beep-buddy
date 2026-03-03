@@ -5,7 +5,7 @@ import board
 import adafruit_character_lcd.character_lcd as characterlcd
 
 # # # # # # # # # # # # # # # #
-# voorbereiding               #
+# Preperation/voorbereiding   #
 # # # # # # # # # # # # # # # #
 
 # LCD pins
@@ -104,7 +104,7 @@ def random_letter():
 # functions voor het voorbeeld, dit bliept de letter en zet het op de lcd
 def LCD_print(letter):
     lcd.clear()
-    lcd.message = f"{letter} =  {MORSE[letter]}"
+    lcd.message = f"{letter} :  {MORSE[letter]}"
     play_morse(letter)
 
 def ON(duration):
@@ -168,7 +168,7 @@ def knop_checken(letter):
             duration = time.time() - press_time
 
             # bepaal kort of lang signaal
-            if duration < (KORT + LANG) /2:   # korter dan grens "."
+            if duration < KORT:   # korter dan grens "."
                 knop_morse.append(".")
             else:                             # langer dan grens "-"
                 knop_morse.append("-")
@@ -195,8 +195,6 @@ def knop_checken(letter):
 # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # Begin van de code voor zelf typen                 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # #
-def typen():
-    
 
 
 # de main loop voor oefenen met voorbeeld  *werkend*
