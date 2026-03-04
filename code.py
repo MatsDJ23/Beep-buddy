@@ -23,7 +23,7 @@ lcd = characterlcd.Character_LCD_Mono(
     lcd_rs, lcd_en, lcd_d4, lcd_d5, lcd_d6, lcd_d7, lcd_columns, lcd_rows
 )
 
-# GPIO setup voor button
+# GPIO setup voor kleine knop
 button = digitalio.DigitalInOut(board.GP28)
 button.direction = digitalio.Direction.INPUT
 button.pull = digitalio.Pull.UP
@@ -33,20 +33,23 @@ big_button = digitalio.DigitalInOut(board.GP1)
 big_button.direction = digitalio.Direction.INPUT
 big_button.pull = digitalio.Pull.UP
 
-# led en buzzer zitten op dezelfde gpio pin
+# LED/buzzer op één pin
 led_buzzer = digitalio.DigitalInOut(board.GP3)
 led_buzzer.direction = digitalio.Direction.OUTPUT
 
-# Letter instellingen
+# # # # # # # # # # # # # # # #
+# Letter/Morse instellingen   #
+# # # # # # # # # # # # # # # #
+
 UNIT = 0.2
-INTRAGAP = 1 * UNIT      
-CHARGAP =  3 * UNIT
-WORDGAP =  7 * UNIT
+INTRAGAP = 1 * UNIT      # korte pauze tussen symbolen
+CHARGAP = 3 * UNIT       # pauze tussen letters
+WORDGAP = 7 * UNIT       # pauze tussen woorden
 
-KORT = 1 * UNIT        # .
-LANG = 3 * UNIT        # -
+KORT = 1 * UNIT          # punt
+LANG = 3 * UNIT          # streep
 
-# Morse code library/alfabet
+# Morse code alfabet
 MORSE = {
     "A": ".-",    "B": "-...",  "C": "-.-.",  "D": "-..",
     "E": ".",     "F": "..-.",  "G": "--.",   "H": "....",
@@ -66,46 +69,13 @@ MORSE = {
     "+": ".-.-.",  "-": "-....-", "_": "..--.-", "\"": ".-..-.",
     "$": "...-..-","@": ".--.-."
 }
-# om van morse code naar letter te gaan voor zelf typen
-MORSE_REVERSED = {
-    ".-": "A",    "-...": "B",  "-.-.": "C",  "-..": "D",
-    ".": "E",     "..-.": "F",  "--.": "G",   "....": "H",
-    "..": "I",    ".---": "J",  "-.-": "K",   ".-..": "L",
-    "--": "M",    "-.": "N",    "---": "O",   ".--.": "P",
-    "--.-": "Q",  ".-.": "R",   "...": "S",   "-": "T",
-    "..-": "U",   "...-": "V",  ".--": "W",   "-..-": "X",
-    "-.--": "Y",  "--..": "Z",
 
-    ".----": "1", "..---": "2", "...--": "3", "....-": "4",
-    ".....": "5", "-....": "6", "--...": "7", "---..": "8",
-    "----.": "9", "-----": "0",
+# Omzetten van morse naar letter
+MORSE_REVERSED = {v: k for k, v in MORSE.items()}
 
-    ".-.-.-": ".", "--..--": ",", "..--..": "?", ".----.": "'",
-    "-.-.--": "!", "-..-.": "/",  "-.--.": "(",  "-.--.-": ")",
-    ".-...": "&",  "---...": ":", "-.-.-.": ";", "-...-": "=",
-    ".-.-.": "+",  "-....-": "-", "..--.-": "_", ".-..-.": "\"",
-    "...-..-": "$",".--.-.": "@"
-}
-
-# Het morse code alfabet is gemaakt met chatgpt omdat het anders heel veel hetzelfde zou zijn
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# Begin van de code voor letters oefenen            #
-# # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-# Function voor random letter
-def random_letter():
-    return random.choice([
-        "A","B","C","D","E","F","G","H","I","J","K","L","M",
-        "N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
-        "!","?","0","1","2","3","4","5","6","7","8","9","_"
-    ])
-
-# functions voor het voorbeeld, dit bliept de letter en zet het op de lcd
-def LCD_print(letter):
-    lcd.clear()
-    lcd.message = f"{letter} :  {MORSE[letter]}"
-    play_morse(letter)
+# # # # # # # # # # # # # # # # # # 
+# Basis functies voor LED/buzzer  #
+# # # # # # # # # # # # # # # # # #
 
 def ON(duration):
     led_buzzer.value = True
@@ -115,11 +85,11 @@ def ON(duration):
 def GAP(duration):
     time.sleep(duration)
 
-def FKORT():      # kort signaal
+def FKORT():
     ON(KORT)
     GAP(INTRAGAP)
 
-def FLANG():      # lang signaal
+def FLANG():
     ON(LANG)
     GAP(INTRAGAP)
 
@@ -131,103 +101,200 @@ def WORD_GAP():
 
 def play_morse(letter):
     code = MORSE[letter]
-
     for symbol in code:
+        check_menu_hold()  # altijd checken of menu moet, ook tijdens het voorbeeld
         if symbol == ".":
             FKORT()
         elif symbol == "-":
             FLANG()
-
     CHAR_GAP()
 
-# functions voor voorbeeld tot hier # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # #
+# Functies voor letters oefenen # 
+# # # # # # # # # # # # # # # # #
 
-# function voor wat jij invoert
+def random_letter():
+    return random.choice(list(MORSE.keys()))
+
+def LCD_print(letter):
+    lcd.clear()
+    lcd.message = f"{letter} :  {MORSE[letter]}"
+    play_morse(letter)
+
 def knop_checken(letter):
-    knop_morse = []                       # lijst om de ingevoerde symbolen op te slaan
-    code = MORSE[letter]                  # de morse-code van de letter
-    lengte = len(code)                    # hoeveel symbolen er ingevoerd moeten worden
+    knop_morse = []
+    code = MORSE[letter]
+    lengte = len(code)
 
-    # zolang we nog niet alle symbolen hebben gekregen
     while len(knop_morse) < lengte:
-        if not big_button.value:          # knop wordt ingedrukt
-            press_time = time.time()      # start tijd meten
-
-            # LED/buzzer aan zolang ingedrukt
+        check_menu_hold()
+        if not big_button.value:
+            press_time = time.time()
             led_buzzer.value = True
-
-            # wacht tot de knop losgelaten wordt
             while not big_button.value:
                 time.sleep(0.01)
-            time.sleep(0.05)  
-
-            # los = LED uit
             led_buzzer.value = False
-
-            # bereken duur van de druk
             duration = time.time() - press_time
-
-            # bepaal kort of lang signaal
-            if duration < KORT:   # korter dan grens "."
+            if duration < KORT:
                 knop_morse.append(".")
-            else:                             # langer dan grens "-"
+            else:
                 knop_morse.append("-")
-
-            # bovenste rij tonen wat er tot nu toe is ingedrukt
             lcd.cursor_position(0, 1)
             lcd.message = "".join(knop_morse)
+            time.sleep(0.2)
 
-            time.sleep(0.2)  # kleine pauze tussen drukken
-
-    # Als alle symbolen zijn ingevoerd vergelijken
     if "".join(knop_morse) == code:
         lcd.clear()
         lcd.message = "goed gedaan!\nvolgende letter"
-        
     else:
         lcd.clear()
-        lcd.message = f"fout, goed was:\n {MORSE[letter]}"
-        time.sleep (0.5)
-
-    # korte pauze zodat gebruiker het resultaat kan zien
+        lcd.message = f"fout, goed was:\n{code}"
     time.sleep(1)
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# Begin van de code voor zelf typen                 #
-# # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-
-# de main loop voor oefenen met voorbeeld  *werkend*
 def letters_oefenen():
-    looping = True
-    while looping == True:
-        time.sleep(0.5)
+    while True:
+        check_menu_hold()
         letter = random_letter()
         LCD_print(letter)
-        time.sleep(0.1)
         knop_checken(letter)
-        
-        while not button.value:
-            time.sleep(0.3)
-            looping = False
 
-# de main loop voor oefenen zonder voorbeeld  *werkend* 
 def morsecode_oefenen():
-    looping1 = True
-    while looping1 == True:
-        time.sleep(0.5)
+    while True:
+        check_menu_hold()
         letter = random_letter()
-        lcd.message = letter
-        time.sleep(0.1)
-        knop_checken(letter)
         lcd.clear()
+        lcd.message = letter
+        knop_checken(letter)
 
+# # # # # # # # # # # # # # # #
+# Functies voor zelf typen    #
+# # # # # # # # # # # # # # # #
+
+def lees_morse_letter():
+    knop_morse = []
+    last_input_time = time.time()
+    
+    # vertraging extra om snelle klikken niet te interpreteren als losse letters
+    LETTER_TIMEOUT = CHARGAP + 0.15  # iets langer dan CHARGAP, is makkelijker
+
+    while True:
+        check_menu_hold()
+        if not big_button.value:
+            press_time = time.time()
+            led_buzzer.value = True
+            while not big_button.value:
+                time.sleep(0.01)
+            led_buzzer.value = False
+            duration = time.time() - press_time
+            if duration < KORT:
+                knop_morse.append(".")
+            else:
+                knop_morse.append("-")
+            lcd.clear()
+            lcd.message = "".join(knop_morse)
+            last_input_time = time.time()
+            time.sleep(0.15)  # kleine pauze 
+
+        # einde letter wacht iets langer dan CHARGAP
+        if knop_morse and (time.time() - last_input_time > LETTER_TIMEOUT):
+            return "".join(knop_morse)
+
+        # spatie / wordgap
+        if not knop_morse and (time.time() - last_input_time > WORDGAP):
+            return "SPACE"
+
+def zelf_typen():
+    lcd.clear()
+    lcd.message = "Typ morse..."
+    woord = ""
+
+    while True:
+        # eerst morse input lezen
+        code = lees_morse_letter()
+
+        # Verwerking van de morse input naar letter/spatie
+        if code == "SPACE":
+            if not woord.endswith(" "):
+                woord += " "
+        else:
+            try:
+                letter = MORSE_REVERSED.get(code, "?")  # fallback voor onbekende code
+                woord += letter
+            except Exception as e:
+                woord += "?"
+        lcd.clear()
+        lcd.message = woord[-16:]  # laatste 16 tekens tonen
+
+        # Kleine knop = clear, lange knop = menu
+        if not button.value:
+            press_start = time.time()
+            while not button.value:
+                time.sleep(0.01)
+            press_duration = time.time() - press_start
+
+            if press_duration < 1:  # korte druk = clear
+                woord = ""
+                lcd.clear()
+                lcd.message = "clear"
+                time.sleep(0.5)
+                lcd.clear()
+                lcd.message = "Typ morse..."
+            else:  # lange druk = menu
+                return  # terug naar menu
+
+# # # # # # # # # # # # # # # # # # # # # # # #
+# Functie om altijd terug naar menu te kunnen #
+# # # # # # # # # # # # # # # # # # # # # # # #
+
+def check_menu_hold():
+    if not button.value:
+        start = time.time()
         while not button.value:
-            time.sleep(0.3)
-            looping1 = False
+            time.sleep(0.01)
+            if time.time() - start > 1.2:
+                lcd.clear()
+                lcd.message = "Menu..."
+                time.sleep(0.3)
+                raise SystemExit
+    return False
 
-# de main loop voor letters zelf typen
+# # # # # # # # # # # # # # # #
+# Menu om modus te kiezen     #
+# # # # # # # # # # # # # # # #
 
+def menu():
+    opties = [
+        ("Letters oefenen", letters_oefenen),
+        ("Morse oefenen", morsecode_oefenen),
+        ("Zelf typen", zelf_typen)
+    ]
 
-# er is nog geen menu dus zet bij testen je functie aan
-letters_oefenen()
+    index = 0
+
+    while True:
+        lcd.clear()
+        lcd.message = "Modus kiezen:\n" + opties[index][0]
+
+        while True:
+            # scrollen
+            if not button.value:
+                time.sleep(0.15)
+                if not button.value:
+                    index = (index + 1) % len(opties)
+                    while not button.value:
+                        time.sleep(0.01)
+                    break
+            # selecteren
+            if not big_button.value:
+                time.sleep(0.15)
+                if not big_button.value:
+                    while not big_button.value:
+                        time.sleep(0.01)
+                    try:
+                        opties[index][1]()
+                    except SystemExit:
+                        pass
+                    break
+            time.sleep(0.05)
+
+menu()
