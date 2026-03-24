@@ -16,3 +16,5 @@ Parts required for this project:
 
 The buzzer and the led in my code are connected via the same gpio pin because they only have to be controlled at the same time.
 The gpio setup can be found at the top of the code file.
+
+At the picture beep-buddy-bread at the top left there is a cable connected to a button, which in the code is referred to as big_button
